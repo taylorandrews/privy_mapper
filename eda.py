@@ -4,7 +4,7 @@ import math
 from sklearn import preprocessing
 from datetime import datetime
 
-def fill_df(df, cols_to_drop):
+def fill_df(df, cols_to_drop=[]):
     '''
     INPUT:
         - Sparse dataframe to be cleaned
@@ -51,9 +51,9 @@ def entropy_score(df, split_on, blob_id):
     Get the entropy, or randomness associated with the houses in one blob
     '''
 
-    df_score_numeric = df.select_dtypes(include=['datetime64[ns]', 'int64', 'float64']) #idk if this will work yet!!!
+    # df_score_numeric = df.select_dtypes(include=['datetime64[ns]', 'int64', 'float64']) #idk if this will work yet!!!
 
-
+    df_score_numeric = df
     # numeric_cols = ['list_price', 'sold_price', 'above_grade_square_feet', 'derived_basement_square_feet', 'garages', 'beds', 'baths', 'zip', 'year_built', 'lot_size_square_feet', 'basement_square_feet', 'lat', 'lng', 'is_attached', ]
     # df_score = df.loc[df[split_on] == blob_id]
     # df_score_numeric = df_score.loc[:,numeric_cols]
@@ -125,7 +125,8 @@ def col_data_types(df):
                     'lat': 'float',
                     'lng': 'float',
                     'is_attached': 'int',
-                    'stories': 'int'}
+                    'stories': 'int',
+                    'zone_id': 'int'}
 
     for col in df.columns:
         if data_types[col] != 'datetime64[ns]':
@@ -134,62 +135,107 @@ def col_data_types(df):
             df.loc[:,col] = pd.to_datetime(df.loc[:,col])
     return df
 
+def eng_features(df):
+    '''
+    INPUT:
+        - dataframe
+            must have columns listed_on and sold_on
+
+    OUTPUT
+        - dataframe
+            will have columns sold_on and time_on_market
+
+    Engeneers a feature called time_on_market
+    Also changes the subdivision column to an integer
+    Also changes 'sold_on' column to integer by subtracting the minimum date from each date
+    '''
+    df['time_on_market'] = df['sold_on'] - df['listed_on']
+    df.loc[:,'time_on_market'] = df.loc[:,'time_on_market'].dt.days
+    df.drop(['listed_on'], axis=1, inplace=True)
+
+    earliest_date = min(df['sold_on'])
+    df['sold_on'] = df['sold_on'] - earliest_date
+    df.loc[:,'sold_on'] = df.loc[:,'sold_on'].dt.days
+
+    df[['subdivision']] = df[['subdivision']].apply(lambda x: x.cat.codes)
+    return df
+
+def get_entropy(df_clean, split_on):
+    '''
+    INPUT
+        - dataframe with all numeric columns. floats and ints okay
+        - heading that defines what category to split on to fin entropy_score
+            eg. zone_id to find the entropy of each zone
+
+    OUTPUT
+        - dictionary with keys as grouped by feature and values as the entropy for that subset of the data
+
+    Splits up the data and find the entropy of each section and returns it into a dictionary
+    '''
+
+    ent_dict = {}
+
+    for col in df_clean[split_on].unique():
+        e_score = entropy_score(df_clean, split_on, col)
+        if e_score:
+            ent_dict[col] = e_score
+            # print "{0} entropy: {1}\n".format(col, e_score)
+
+    return ent_dict
+
+def main():
+    pass
+
 if __name__ == '__main__':
-    filename = '../privy_private/property_listings.csv'
-    df = pd.read_csv(filename)
-    cols_to_drop = ["id",
-                    "street",
-                    "listing_number",
-                    "listing_number_previous",
-                    "status",
-                    "status_changed_on",
-                    "contracted_on",
-                    "off_market_on",
-                    "list_price",
-                    "original_list_price",
-                    "previous_price",
-                    "derived_basement_square_feet",
-                    "car_storage",
-                    "car_spaces",
-                    "area",
-                    "city",
-                    "state",
-                    "property_key",
-                    "externally_last_updated_at",
-                    "photos",
-                    "structural_style",
-                    "property_type",
-                    "architecture",
-                    "lot_size_acres",
-                    "basement_finished_status",
-                    "basement_finished_pct",
-                    "basement_size",
-                    "basement_type",
-                    "listing_agent_mls_id",
-                    "structural_type",
-                    "zoned",
-                    "listing_agent_mls_id",
-                    "structural_type"]
+    # # main()
+    properties = '../privy_private/property_listings.csv'
+    zones = '../privy_private/northva-properties-cleaned.csv'
+    df_properties = pd.read_csv(properties)
+    df_zones = pd.read_csv(zones, usecols=['listing_number', 'zone_id'])
 
-    print 'here'
-    df_full = fill_df(df, cols_to_drop)
-    print 'here2'
-    # df_full.to_csv('property_listings_22181_testing.csv')
+    df_zones_full = fill_df(df_zones)
+    df_zones_full = df_zones_full.drop(df_zones_full[df_zones_full.zone_id == 0].index)
 
-    df_clean = col_data_types(df_full)
+    properties_cols_to_drop = ["id",
+                            "status",
+                            "status_changed_on",
+                            "contracted_on",
+                            "off_market_on",
+                            "list_price",
+                            "original_list_price",
+                            "previous_price",
+                            "derived_basement_square_feet",
+                            "car_storage",
+                            "car_spaces",
+                            "area",
+                            "street",
+                            "city",
+                            "state",
+                            "property_key",
+                            "externally_last_updated_at",
+                            "photos",
+                            "structural_style",
+                            "property_type",
+                            "architecture",
+                            "lot_size_acres",
+                            "basement_finished_status",
+                            "basement_finished_pct",
+                            "basement_size",
+                            "basement_type",
+                            "listing_agent_mls_id",
+                            "structural_type",
+                            "zoned",
+                            "listing_agent_mls_id",
+                            "structural_type"]
 
+    df_properties_full = fill_df(df_properties, properties_cols_to_drop)
 
-    # print df_full.info()
-    # print df_full.head()
+    df_properties_zones_full = fill_df(df_properties_full.set_index('listing_number').join(df_zones_full.set_index('listing_number')))
 
-    # split_on = 'zip'
-    #
-    # ent_dict = {}
-    #
-    # # print df_full.info()
-    #
-    # for col in df_full[split_on].unique():
-    #     e_score = entropy_score(df_full, split_on, col)
-    #     if e_score:
-    #         ent_dict[col] = e_score
-    #         # print "{0} entropy: {1}\n".format(col, e_score)
+    df_properties_zones_full_clean = col_data_types(df_properties_zones_full)
+
+    df_clean = eng_features(df_properties_zones_full_clean)
+
+    split_on = 'zone_id'
+
+    entropies = get_entropy(df_clean, split_on)

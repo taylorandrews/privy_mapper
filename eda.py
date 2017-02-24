@@ -51,18 +51,11 @@ def entropy_score(df, split_on, blob_id):
     Get the entropy, or randomness associated with the houses in one blob
     '''
 
-    # df_score_numeric = df.select_dtypes(include=['datetime64[ns]', 'int64', 'float64']) #idk if this will work yet!!!
+    df_score = df.loc[df[split_on] == blob_id]
+    df_score_norm = normalize_df(df_score)
+    shannon_df = df_score_norm.apply(shannon, axis=0)
 
-    df_score_numeric = df
-    # numeric_cols = ['list_price', 'sold_price', 'above_grade_square_feet', 'derived_basement_square_feet', 'garages', 'beds', 'baths', 'zip', 'year_built', 'lot_size_square_feet', 'basement_square_feet', 'lat', 'lng', 'is_attached', ]
-    # df_score = df.loc[df[split_on] == blob_id]
-    # df_score_numeric = df_score.loc[:,numeric_cols]
-
-    df_score_numeric_norm = normalize_df(df_score_numeric)
-
-    sh_df = df_score_numeric_norm.apply(shannon, axis=0)
-
-    blob_entropy = sh_df.mean()
+    blob_entropy = shannon_df.mean()
     if blob_entropy > 0.01:
         return blob_entropy
     else:
@@ -172,9 +165,7 @@ def get_entropy(df_clean, split_on):
 
     Splits up the data and find the entropy of each section and returns it into a dictionary
     '''
-
     ent_dict = {}
-
     for col in df_clean[split_on].unique():
         e_score = entropy_score(df_clean, split_on, col)
         if e_score:
@@ -183,19 +174,25 @@ def get_entropy(df_clean, split_on):
 
     return ent_dict
 
-def main():
-    pass
+def read_in():
+    '''
+    OUTPUT
+        - pandas dataframe from the property_listings.csv
+        - pandas dataframe from the northva-properties-cleaned.csv
 
-if __name__ == '__main__':
-    # # main()
+    Original digestion of csv tables
+    '''
+
     properties = '../privy_private/property_listings.csv'
     zones = '../privy_private/northva-properties-cleaned.csv'
-    df_properties = pd.read_csv(properties)
-    df_zones = pd.read_csv(zones, usecols=['listing_number', 'zone_id'])
+    return (pd.read_csv(properties), pd.read_csv(zones, usecols=['listing_number', 'zone_id']))
 
+def fill_zones(df_zones):
     df_zones_full = fill_df(df_zones)
     df_zones_full = df_zones_full.drop(df_zones_full[df_zones_full.zone_id == 0].index)
+    return df_zones_full
 
+def fill_properties(df_properties):
     properties_cols_to_drop = ["id",
                             "status",
                             "status_changed_on",
@@ -229,13 +226,48 @@ if __name__ == '__main__':
                             "structural_type"]
 
     df_properties_full = fill_df(df_properties, properties_cols_to_drop)
+    return df_properties_full
 
-    df_properties_zones_full = fill_df(df_properties_full.set_index('listing_number').join(df_zones_full.set_index('listing_number')))
+def partition_df(df):
+    '''
+    INPUT
+        - dataframe
 
-    df_properties_zones_full_clean = col_data_types(df_properties_zones_full)
+    OUTPUT
+        - dataframe that is a subset of input
 
-    df_clean = eng_features(df_properties_zones_full_clean)
+    This grabs a piece of the dataframe for faster testing of the entropy function
+    '''
+    zips_to_keep = [22180, 22181, 22027, 22043, 22046, 22213, 22205, 22207]
+    # zips_to_keep = [22180, 22181]
+    df_clean_test = df.loc[df['zip'].isin(zips_to_keep)]
+    return df_clean_test
+
+def main():
+    # df_properties, df_zones = read_in()
+    # print 'CSVs read in...'
+    #
+    # df_zones_full = fill_zones(df_zones)
+    # df_properties_full = fill_properties(df_properties)
+    # print 'nans removed...'
+    #
+    # df_properties_zones_full = fill_df(df_properties_full.set_index('listing_number').join(df_zones_full.set_index('listing_number')))
+    # print 'tables joined...'
+    #
+    # df_properties_zones_full_clean = col_data_types(df_properties_zones_full)
+    # print 'data types streamlined...'
+    #
+    # df_clean = eng_features(df_properties_zones_full_clean)
+    # print 'extra features added...'
+    #
+    # df_clean_test = partition_df(df_clean)
+    # print 'dataframe partitioned...'
 
     split_on = 'zone_id'
-
     entropies = get_entropy(df_clean, split_on)
+    print 'entropies calculated...'
+
+    return (df_clean, df_clean_test, entropies)
+
+if __name__ == '__main__':
+    df_clean, df_clean_test, entropies = main()

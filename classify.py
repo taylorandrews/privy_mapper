@@ -104,7 +104,7 @@ def min_entropy_scorer(estimator, X):
     score = total_entropy(X)
 
 
-def build_model(X, param_grid):
+def build_model(X):#, param_grid):
     '''
     INPUT
         -
@@ -115,23 +115,23 @@ def build_model(X, param_grid):
     wuditdo
     '''
 
-    # connectivity_matrix = build_connectivity_matrix(X)
+    connectivity_matrix = build_connectivity_matrix(X)
 
     # this one will be used for the grid search
-    ac = AgglomerativeClustering(memory='cluster_cache', compute_full_tree=True)
+    # ac = AgglomerativeClustering(memory='cluster_cache', compute_full_tree=True)
 
 
     # this one is for testing
-    # ac = AgglomerativeClustering(n_clusters=n_clusters,
-    #                             connectivity=connectivity_matrix,
-    #                             affinity='euclidean',
-    #                             linkage='ward')
-    #
-    # y = ac.fit_predict(X)
+    ac = AgglomerativeClustering(n_clusters=15,
+                                connectivity=connectivity_matrix,
+                                affinity='euclidean',
+                                linkage='ward')
 
-    ac.fit()
+    y = ac.fit_predict(X)
 
-    classifier = GridSearchCV(ac, param_grid, scoring=min_entropy_scorer, n_jobs=-1, verbose=1)
+    # ac.fit()
+
+    # classifier = GridSearchCV(ac, param_grid, scoring=min_entropy_scorer, n_jobs=-1, verbose=1)
 
 
 
@@ -159,31 +159,27 @@ def numpy_to_pandas(X, y, X_cols, y_col='nest_id'):
 
 if __name__ == '__main__':
     # df_clean, entropies = entropy_main()
-    # df_clean = eda_main()
 
-    # df_clean['web_id'] = 0
-
+    ##### ----- TESTING ----- #####
+    df_clean = eda_main()
     df_test = df_clean[df_clean['zip'] == 22181]
-
     cols = list(df_test.columns)
-
-    # train, test = train_test_split(df, train_size=0.8)
-
-    cm = build_connectivity_matrix(df_test)
-
-#=================================================================
-# ________---------^^^^^^^^ self. im trying to get this to run with the grid search and the custom scoring function.
-#=================================================================
-
-    param_grid= {n_clusters=[10],
-    connectivity=cm,
-    affinity='euclidean',
-    linkage='ward'}
-
     X = df_test.values
+    y = build_model(X)
 
-    y = build_model(X, param_grid)
+
+    ##### ----- RUNNING ----- #####
+    # df_clean = eda_main()
+    # cols = list(df_clean.columns)
+    # X = df_clean.values
+    # param_grid= {n_clusters=[10],
+    # connectivity=cm,
+    # affinity='euclidean',
+    # linkage='ward'}
+    # y = build_model(X, param_grid)
+
+    # cm = build_connectivity_matrix(df_test)
 
     df_nest = numpy_to_pandas(X, y, cols)
-
-    entropy = entropy_main(df_nest, 'nest_id')
+    entropy_nest = entropy_main(df_nest, 'nest_id')
+    entropy_native = entropy_main(df_test, 'zone_id')

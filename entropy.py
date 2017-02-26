@@ -77,8 +77,13 @@ def shannon(col):
     Returns the entropy of a list of values. If one or more values is 0, returns 0 since log(0) is undefined.
     '''
 
-    entropy = - sum([ p * new_log(p) / math.log(2.0) for p in col]) / len(col)
-    return entropy
+    # entropy = - sum([ p * new_log(p) / math.log(2.0) for p in col]) / len(col)
+    # return entropy
+
+    variance = np.var(col)
+    return variance
+
+
 
 def new_log(x):
     '''

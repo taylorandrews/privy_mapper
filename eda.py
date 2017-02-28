@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import math
-from sklearn import preprocessing
+from sklearn.preprocessing import MinMaxScaler
 from datetime import datetime
 
 def read_in():
@@ -142,7 +142,7 @@ def eng_features(df):
     df = df.groupby('zip').filter(lambda x: len(x) > 25)
 
     df.reset_index(drop=True, inplace=True)
-    
+
     return df
 
 def partition_df(df):
@@ -160,6 +160,22 @@ def partition_df(df):
     df_clean_test = df.loc[df['zip'].isin(zips_to_keep)]
     return df_clean_test
 
+def standerdize_cols(df, cols):
+    '''
+    INPUT
+        - dataframe
+        - list of column names to standardize
+
+    OUTPUT
+        - dataframe
+
+    standardizes certain columns in dataframe from 0 to 1
+    '''
+
+    scalar = MinMaxScaler()
+    df[cols] = scalar.fit_transform(df[cols])
+    return df
+
 def eda_main():
     df_properties, df_zones = read_in()
     print 'CSVs read in...'
@@ -176,6 +192,10 @@ def eda_main():
 
     df_clean = eng_features(df_properties_zones_full_clean)
     print 'extra features added...'
+
+    # cols_std = ['sold_on', 'time_on_market', 'sold_price', 'above_grade_square_feet', 'lot_size_square_feet', 'basement_square_feet']
+    # df_clean_std = standerdize_cols(df_clean, cols_std)
+    # print 'relevant columns standardized...'
 
     # df_clean_test = partition_df(df_clean)
     # print 'dataframe partitioned...'

@@ -15,7 +15,7 @@ def read_in():
 
     properties = '../privy_private/property_listings.csv'
     zones = '../privy_private/northva-properties-cleaned.csv'
-    return (pd.read_csv(properties), pd.read_csv(zones, usecols=['listing_number', 'zone_id']))
+    return (pd.read_csv(properties, low_memory=False), pd.read_csv(zones, low_memory=False, usecols=['listing_number', 'zone_id']))
 
 def fill_zones(df_zones):
     df_zones_full = fill_df(df_zones)
@@ -125,9 +125,11 @@ def eng_features(df):
 
     Changes 'sold_on' column to integer by subtracting the minimum date from each date
 
-    Sets indecies to 0, 1, ..., n
-
     Drops houses with fewer than 25 comps in the same zip code
+
+    Drops houses in zip codes with < 2 zones
+
+    Sets indecies to 0, 1, ..., n
     '''
     df['time_on_market'] = df['sold_on'] - df['listed_on']
     df.loc[:,'time_on_market'] = df.loc[:,'time_on_market'].dt.days
@@ -141,6 +143,11 @@ def eng_features(df):
 
     df = df.groupby('zip').filter(lambda x: len(x) > 25)
 
+    single_zone = []
+    for z in df['zip'].unique():
+        if len(df[df['zip'] == z]['zone_id'].unique()) == 1:
+            single_zone.append(z)
+    df = df[~df.zip.isin(single_zone)]
     df.reset_index(drop=True, inplace=True)
 
     return df

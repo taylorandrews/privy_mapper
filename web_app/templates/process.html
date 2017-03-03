@@ -64,14 +64,14 @@
           </div>
           <div class="col-md-9">
             <h2 class="featurette-heading">Data</h2>
-            <p class="lead">The data was collected by Privy from multiple listing service (MLS) online. The organization of this data is a big part of the sevice that they provide. I took the data in the greater DC/Northern Virginia/Maryland area that was already classified manually by Privy. After removing points with missing data, there were about 250,000 homes in the data. My goal was to emulate the geographic clusters, and make them even more homogenous by bringing in more features from the MLS dataset.</p>
+            <p class="lead">The data was collected by Privy from multiple listing services (MLS) online. The organization of this data is a big part of the service that they provide. I took their data from the greater DC/Northern Virginia/Maryland area that was already classified manually. After removing points with missing data, there were about 250,000 homes in the data. My goal was to emulate the geographic clusters, and make them even more homogenous by bringing in more features from the MLS dataset.</p>
           </div>
         </div>
 
         <div class="row featurette">
           <div class="col-md-9">
             <h2 class="featurette-heading">Modeling</h2>
-            <p class="lead">I utilized the agglomerative clustering model from scikit-learn. This model starts by taking the 'closest' two data points and combining them into the same group. It then treats the center of those points as a new point, or cluster centroid. It then finds the next two closest points and combines them and so on, until there are n clusters remaining. For n, I used the same number of clusters per zip code in the dataset.</p>
+            <p class="lead">I utilized the agglomerative clustering model from scikit-learn. This model starts by taking the 'closest' two data points and combining them into the same group. It then treats the center of those points as a new point, or cluster centroid. Next, it finds the subsequent two closest points and combines them and so on, until there are n clusters remaining. I used the same number of clusters per zip code as Privy.</p>
           </div>
           <div class="col-md-3">
              <p><br /><br /><br /><br /><br /><br /></p>
@@ -87,7 +87,7 @@
 
           <div class="col-md-9">
             <h2 class="featurette-heading">Results</h2>
-            <p class="lead">After training my model scoring system to preform very well with the pre-labeled zones from Privy, I let the agglomerative clustering algorithm loose on the data. I ended up with clusters that somewhat emulated the geographically clustered houses from Privy. My clusters overlapped somewhat, to combine houses that are a little further apart, but have features in common with other houses in their new cluster.<br />The pictures show the differences in my clusters vs. those from Privy in a suburban setting and an unban one.</p>
+            <p class="lead">After training my model scoring system to preform very well with the pre-labeled zones from Privy, I let the agglomerative clustering algorithm loose on the data. I ended up with clusters that somewhat emulated the geographically clustered houses from Privy. My clusters overlapped somewhat, to combine houses that are a little further apart that have features in common with other houses in their new cluster.<br />The pictures show the differences in my clusters vs. those from Privy in a suburban setting and an urban one.</p>
           </div>
         </div>
 
@@ -109,7 +109,7 @@
                     Urban Environment - My New Nests
                 </h2>
                 <p><big>
-                    This is what my new hosue nests ended up like in that same zip code (20002). There is some overlap but houses in the same zone are likely to have more features in common than just a reliance in latitude/longitude data.
+                    This is what my new house nests ended up like in that same zip code (20002). There is some overlap but houses in the same zone are likely to have more features in common than just a reliance in latitude/longitude data.
                 </big></p>
             </div>
         </div>

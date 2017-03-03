@@ -7,17 +7,17 @@ app = Flask(__name__)
 def index():
     return render_template('index.html')
 
-@app.route('/research')
-def research():
-    return render_template('research.html')
+@app.route('/about')
+def about():
+    return render_template('about.html')
 
-@app.route('/pastpredictions')
-def pastpreds():
-    return render_template('pastpredictions.html')
+@app.route('/contact')
+def contact():
+    return render_template('contact.html')
 
-@app.route('/currentpredictions')
-def currentpreds():
-    return render_template('currentpredictions.html')
+@app.route('/process')
+def process():
+    return render_template('process.html')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8105, debug=False, threaded=True)
+    app.run(host='0.0.0.0', port=8107, debug=True, threaded=True)

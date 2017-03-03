@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="../static/img/favicon.ico">
+    <title>Reveal Estate Process</title>
+    <link href="../static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../static/css/ie10-viewport-bug-workaround.css" rel="stylesheet">
+    <script src="../static/js/ie-emulation-modes-warning.js"></script>
+    <link href="../static/css/carousel.css" rel="stylesheet">
+  </head>
+<!-- NAVBAR
+================================================== -->
+  <body>
+    <div class="navbar-wrapper">
+      <div class="container">
+
+        <nav class="navbar navbar-inverse navbar-static-top">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              <a class="navbar-brand" href="/">Reveal Estate</a>
+            </div>
+            <div id="navbar" class="navbar-collapse collapse">
+              <ul class="nav navbar-nav">
+                  <li><a href="/">Home</a></li>
+                  <li><a href="/about">About</a></li>
+                  <li><a href="/process">Process</a></li>
+                  <li><a href="/contact">Contact</a></li>
+              </ul>
+            </div>
+          </div>
+        </nav>
+
+      </div>
+    </div>
+
+    <section style='background-image: url("../static/img/shingles.jpg"); height:600px; width:1300px' id="services">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-24 text-center">
+                    <h1 style='color:white; font-size:80px' class='text-primary'><br /><br />Process</h1>
+                    <hr style='color:black'>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="container marketing">
+
+        <div class="row featurette">
+          <div class="col-md-3">
+             <p><br /><br /><br /><br /><br /><br /></p>
+              <img class="featurette-image img-responsive img-circle center-block" src="../static/img/data.jpg">
+          </div>
+          <div class="col-md-9">
+            <h2 class="featurette-heading">Data</h2>
+            <p class="lead">The data was collected by Privy from multiple listing service (MLS) online. The organization of this data is a big part of the sevice that they provide. I took the data in the greater DC/Northern Virginia/Maryland area that was already classified manually by Privy. After removing points with missing data, there were about 250,000 homes in the data. My goal was to emulate the geographic clusters, and make them even more homogenous by bringing in more features from the MLS dataset.</p>
+          </div>
+        </div>
+
+        <div class="row featurette">
+          <div class="col-md-9">
+            <h2 class="featurette-heading">Modeling</h2>
+            <p class="lead">I utilized the agglomerative clustering model from scikit-learn. This model starts by taking the 'closest' two data points and combining them into the same group. It then treats the center of those points as a new point, or cluster centroid. It then finds the next two closest points and combines them and so on, until there are n clusters remaining. For n, I used the same number of clusters per zip code in the dataset.</p>
+          </div>
+          <div class="col-md-3">
+             <p><br /><br /><br /><br /><br /><br /></p>
+              <img class="featurette-image img-responsive img-circle center-block" src="../static/img/modeling_1.jpg">
+          </div>
+        </div>
+
+        <div class="row featurette">
+            <div class="col-md-3">
+               <p><br /><br /><br /><br /><br /><br /></p>
+                <img class="featurette-image img-responsive img-circle center-block" src="../static/img/results.jpg">
+            </div>
+
+          <div class="col-md-9">
+            <h2 class="featurette-heading">Results</h2>
+            <p class="lead">After training my model scoring system to preform very well with the pre-labeled zones from Privy, I let the agglomerative clustering algorithm loose on the data. I ended up with clusters that somewhat emulated the geographically clustered houses from Privy. My clusters overlapped somewhat, to combine houses that are a little further apart, but have features in common with other houses in their new cluster.<br />The pictures show the differences in my clusters vs. those from Privy in a suburban setting and an unban one.</p>
+          </div>
+        </div>
+
+        <hr class="featurette-divider">
+
+        <div class="row">
+            <div class="col-md-6">
+                <img class="img-responsive" src="../static/img/zone_20002.jpg">
+                <h2>
+                    Urban Environment - Privy Zones
+                </h2>
+                <p><big>
+                    This is a sample of what the original zones from Privy looked like in the 20002 zip code in Washington DC. The roads are heavily relied on in house classification and there is no overlap.
+                </big></p>
+            </div>
+            <div class="col-md-6 portfolio-item">
+                <img class="img-responsive" src="../static/img/nest_20002.jpg">
+                <h2>
+                    Urban Environment - My New Nests
+                </h2>
+                <p><big>
+                    This is what my new hosue nests ended up like in that same zip code (20002). There is some overlap but houses in the same zone are likely to have more features in common than just a reliance in latitude/longitude data.
+                </big></p>
+            </div>
+        </div>
+
+        <div class="row">
+            <p><br /><br /></p>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <img class="img-responsive" src="../static/img/zone_22181.jpg">
+                <h2>
+                    Suburban Environment - Privy Zones
+                </h2>
+                <p><big>
+                    This is another sample of the Privy geo-zones for a suburban area. This is zip code 22181.
+                </big></p>
+            </div>
+            <div class="col-md-6">
+                <img class="img-responsive" src="../static/img/nest_22181.jpg">
+                <h2>
+                    Suburban Environment - My New Nests
+                </h2>
+                <p><big>
+                    Finally, here are my algorithm's nests for a suburban area. There tends to be more overlap in suburban zip codes.
+                </big></p>
+            </div>
+        </div>
+        <!-- /.row -->
+        <hr class="featurette-divider">
+
+    <!-- FOOTER -->
+    <footer>
+      <p class="pull-right"><a href="#">Back to top   </a></p>
+      <p>   &middot; Taylor Andrews &middot; 2017 &middot;</p>
+    </footer>
+
+  </div><!-- /.container -->
+
+
+  <!-- Bootstrap core JavaScript
+  ================================================== -->
+  <!-- Placed at the end of the document so the pages load faster -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script>window.jQuery || document.write('<script src="../static/js/jquery.min.js"><\/script>')</script>
+  <script src="../static/js/bootstrap.min.js"></script>
+  <!-- Just to make our placeholder images work. Don't actually copy the next line! -->
+  <script src="../static/js/holder.min.js"></script>
+  <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+  <script src="../static/js/ie10-viewport-bug-workaround.js"></script>
+</body>
+</html>

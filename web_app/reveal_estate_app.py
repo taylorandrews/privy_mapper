@@ -20,4 +20,4 @@ def process():
     return render_template('process.html')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8107, debug=True, threaded=True)
+    app.run(host='0.0.0.0', port=8105, debug=False, threaded=True)

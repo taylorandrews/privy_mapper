@@ -53,15 +53,15 @@ def my_distance(h1, h2, urban):
     cd = crow_distance(h1, h2)
 
     bonus = 1
-    h1_feats = h1[2:]
-    h2_feats = h2[2:]
-
-    if cd > ((urban * -1.5) + 3):
-        bonus = 10000
-
-    for i, v in enumerate(h1_feats):
-        if v == h2_feats[i]:
-            bonus *= 0.5
+    # h1_feats = h1[2:]
+    # h2_feats = h2[2:]
+    #
+    # if cd > ((urban * -1.5) + 3):
+    #     bonus = 10000
+    #
+    # for i, v in enumerate(h1_feats):
+    #     if v == h2_feats[i]:
+    #         bonus *= 0.5
 
     final_distance = cd * bonus
 
@@ -107,8 +107,6 @@ def build_fit_predict(X, n_clusters, urban):
                                 connectivity=connectivity_matrix,
                                 affinity='euclidean',
                                 linkage='ward',
-                                # memory='cluster_cache',
-                                # compute_full_tree=True
                                 )
 
     y = ac.fit_predict(X)
@@ -162,15 +160,12 @@ def starters(df_clean):
     '''
 
     cols_std = ['sold_on', 'time_on_market', 'sold_price', 'above_grade_square_feet', 'lot_size_square_feet', 'basement_square_feet']
-
-    # my_zips = [22030] #suburban
-    # my_zips = [20001, 20002, 22181, 21157]
+    my_zips = [22181, 20002]
     # my_zips = [22181, 21054, 20601, 21090, 22025, 20001, 20002, 20009, 20011, 20015]
-    my_zips =list(df_clean['zip'].unique())
+    # my_zips =list(df_clean['zip'].unique())
     df_zip_codes = pd.read_csv('../data/zip_codes.csv')
     df_clean_zips = pd.merge(df_clean, df_zip_codes, on='zip', how='left')
     df_clean_zips['urban'] = (df_clean_zips['lzden'] > 8.).astype(int)
-    # df_urban_zips = df_clean_zips['zip', 'urban']
     df_urban_only = df_clean_zips[df_clean_zips['urban'] == 1]
     urban_zips = list(df_urban_only['zip'])
     zip_codes = {key:(1 if key in urban_zips else 0) for key in my_zips}
@@ -197,8 +192,8 @@ def classify_zip(df_zip, urban, cols_std, zip_key):
     X_full = df.values
 
     ll_cols = [11, 12]
-    cols_dict = {0: [5], 1: [14]}
-    cols = ll_cols + cols_dict[urban]
+    # cols_dict = {0: [5], 1: [14]}
+    cols = ll_cols #+ cols_dict[urban]
     col_names = list(df.columns[cols])
     X = X_full[:,cols]
     y_pred = build_fit_predict(X, n_clusters, urban)
@@ -212,11 +207,10 @@ def classify_zip(df_zip, urban, cols_std, zip_key):
     return df_nest
 
 if __name__ == '__main__':
-    # df_clean = eda_main()
+    df_clean = eda_main()
     zip_codes, cols_std = starters(df_clean)
     df_scores = pd.DataFrame()
     i=len(zip_codes)
-    # print zip_codes
     for zip_key, urban in zip_codes.iteritems():
         print "working on zip: {}. {} more to go".format(zip_key, i-1)
         i-=1
@@ -225,4 +219,4 @@ if __name__ == '__main__':
         df_scores = df_scores.append(df_nest[['nest_id', 'nest_score', 'zone_score']])
 
     df_clean_scores = df_clean.join(df_scores, how='left')
-    df_clean_scores.to_csv('data/all_zips.csv')
+    df_clean_scores.to_csv('data/22181_20002_crow.csv')

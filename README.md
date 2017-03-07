@@ -8,9 +8,9 @@ The goal of this project is to algorithmically group houses into 'nests' of rele
 2. [Distance Metric](#distance-metric)
 3. [Scoring Function](#scoring-function)
 4. [Agglomerative Clustering](#clustering)
-    * [Privy Zones](#1.-privy-zones)
-    * [My Zones (Distance)](#2.my-zones-physical-distance)
-    * [My Zones (Other Features Included)](#3.my-zones-other-features-included)  
+    * [Privy Zones](#1-privy-zones)
+    * [My Zones (Distance)](#2-my-zones-physical-distance)
+    * [My Zones (Other Features Included)](#3-my-zones-other-features-included)  
 5. [Results](#results)
 
 ## Dataset

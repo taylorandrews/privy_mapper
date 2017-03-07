@@ -5,12 +5,13 @@ The goal of this project is to algorithmically group houses into 'nests' of rele
 
 ## Table of Contents
 1. [Dataset](#dataset)
-2. [Distance Metric](#mri-background)
-    * [MRI Pre-Processing](#mri-pre-processing)
-3. [Scoring Function](#high-grade-gliomas)
-4. [Agglomerative Clustering](#convolutional-neural-networks)
-    * [Model Architecture](#model-architecture)
-5. [Results](#future-directions)
+2. [Distance Metric](#distance-metric)
+3. [Scoring Function](#scoring-function)
+4. [Agglomerative Clustering](#clustering)
+    * [Privy Zones](#1.-privy-zones)
+    * [My Zones (Distance)](#2.my-zones-physical-distance)
+    * [My Zones (Other Features Included)](#3.my-zones-other-features-included)  
+5. [Results](#results)
 
 ## Dataset
 
@@ -36,6 +37,9 @@ My hierarchical clustering algorithm starts by taking the two 'closest' houses i
 Once my model was tuned and had classified the houses, I had three sets of clusters over the same data to compare.
 
 ### 1. Privy zones
+
+The previously established manually clustered zones that Privy drew are the baseline model. I first optimized the distance and scoring functions to preform very well on these clusters. This project really boils down to algorithmically replicating these zones, and even going a step further to make them more homogeneous.
+
 * Pros
     * Proven to work well in the real world
     * Easily interpretable
@@ -48,6 +52,9 @@ Once my model was tuned and had classified the houses, I had three sets of clust
     * Okay [silhouette score](#Scoring Function)
 
 ### 2. My Zones (Physical Distance)
+
+My first attempt at replicating Privy's zones was simply to cluster using a physical distance metric. This replicated the Privy zones reasonably well and even preformed a little bit better according the average zone silhouette score.
+
 * Pros
     * Fast algorithmic solution
     * Easily interpretable
@@ -58,6 +65,9 @@ Once my model was tuned and had classified the houses, I had three sets of clust
     * Cluster imbalance
 
 ### 3. My Zones (Other Features Included)
+
+The final, implementable model that I made takes into account other important features in the dataset alongside the latitude/longitude data. My algorithm can categorize over a half million houses per hour, making it considerable more efficient than manually labeling each cluster.
+
 * Pros
     * Strongest [silhouette score](#Scoring Function)
     * Fast algorithmic solution
@@ -69,3 +79,6 @@ Once my model was tuned and had classified the houses, I had three sets of clust
     * Some cluster overlap
 
 ## Results
+
+After training my model scoring system to preform very well with the pre-labeled zones from Privy, I let the agglomerative clustering algorithm loose on the data. I ended up with clusters that somewhat emulated the geographically clustered houses from Privy. My clusters overlapped somewhat, to combine houses that are a little further apart that have features in common with other houses in their new cluster.
+The pictures show the differences in my clusters vs. those from Privy in a suburban setting and an urban one.

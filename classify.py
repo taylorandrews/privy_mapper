@@ -160,7 +160,7 @@ def starters(df_clean):
     '''
 
     cols_std = ['sold_on', 'time_on_market', 'sold_price', 'above_grade_square_feet', 'lot_size_square_feet', 'basement_square_feet']
-    my_zips = [22181, 20002]
+    my_zips = [20120]
     # my_zips = [22181, 21054, 20601, 21090, 22025, 20001, 20002, 20009, 20011, 20015]
     # my_zips =list(df_clean['zip'].unique())
     df_zip_codes = pd.read_csv('../data/zip_codes.csv')
@@ -219,4 +219,4 @@ if __name__ == '__main__':
         df_scores = df_scores.append(df_nest[['nest_id', 'nest_score', 'zone_score']])
 
     df_clean_scores = df_clean.join(df_scores, how='left')
-    df_clean_scores.to_csv('data/22181_20002_crow.csv')
+    df_clean_scores.to_csv('../data/data/20120_crow.csv')

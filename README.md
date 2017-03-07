@@ -6,6 +6,7 @@ The goal of this project is to algorithmically group houses into 'nests' of rele
 <img alt="Example of Distnace Metric" src="images/all_zips.png" width='400'>  
 <sub><b>Figure 1: </b> Visualization of all houses in dataset. Colored by ZIP Code. </sub>   
 
+Check out my web application at [www.reveal-estate.com](www.reveal-estate.com) to learn more!
 
 ## Table of Contents
 1. [Dataset](#dataset)

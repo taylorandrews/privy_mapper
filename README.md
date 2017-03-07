@@ -3,7 +3,7 @@
 I worked with Denver based company [Privy](http://www.getprivynow.com) on this project. They introduced me to their business model and need for a clustering algorithm.
 The goal of this project is to algorithmically group houses into 'nests' of relevant comps. By taking the purely geographically based zones that Privy already made, and finding the patterns that they used, my algorithm can categorize new data. It's even capable of getting data from a totally new city, with different streets and features and create house nests from scratch.
 
-<img alt="Example of Distnace Metric" src="images/all_zips.png" width='400'>
+<img alt="Example of Distnace Metric" src="images/all_zips.png" width='400'>  
 <sub><b>Figure 1: </b> Visualization of all houses in dataset. Colored by ZIP Code. </sub>   
 
 
@@ -29,7 +29,7 @@ This quantity was used in two different places in the project.
 * Score clusters that have been made. See [Scoring Function](#scoring-function).
 * Create new clusters. See [Agglomerative Clustering](#clustering).
 
-<img alt="Example of Distnace Metric" src="images/distance_metric_example.png" width='400'>
+<img alt="Example of Distnace Metric" src="images/distance_metric_example.png" width='400'>  
 <sub><b>Figure 2: </b> Simplified example of custom 'distance' metric used in clustering </sub>   
 
 
@@ -59,7 +59,7 @@ The previously established manually clustered zones that Privy drew are the base
     * Takes an extremely long time to manually draw zones
     * Okay [silhouette score](#scoring-function)
 
-<img alt="Example of Distnace Metric" src="images/privy_20120.png" width='400'>
+<img alt="Example of Distnace Metric" src="images/privy_20120.png" width='400'>  
 <sub><b>Figure 3: </b> Privy clusters in ZIP Code 20120 </sub>   
 
 
@@ -77,7 +77,7 @@ My first attempt at replicating Privy's zones was simply to cluster using a phys
 * Cons
     * Cluster imbalance
 
-<img alt="Example of Distnace Metric" src="images/crow_20120.png" width='400'>
+<img alt="Example of Distnace Metric" src="images/crow_20120.png" width='400'>  
 <sub><b>Figure 4: </b> Distance based clusters in ZIP Code 20120 </sub>  
 
 
@@ -95,7 +95,7 @@ The final, implementable model that I made takes into account other important fe
     * Not as easily interpretable
     * Some cluster overlap
 
-<img alt="Example of Distnace Metric" src="images/my_dist_20120.png" width='400'>
+<img alt="Example of Distnace Metric" src="images/my_dist_20120.png" width='400'>  
 <sub><b>Figure 5: </b> Final model clusters in ZIP Code 20120 </sub>  
 
 ## Results

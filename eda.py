@@ -13,50 +13,8 @@ def read_in():
     Original digestion of csv tables
     '''
 
-    properties = '../privy_private/property_listings.csv'
-    zones = '../privy_private/northva-properties-cleaned.csv'
-    return (pd.read_csv(properties, low_memory=False), pd.read_csv(zones, low_memory=False, usecols=['listing_number', 'zone_id']))
-
-def fill_zones(df_zones):
-    df_zones_full = fill_df(df_zones)
-    df_zones_full = df_zones_full.drop(df_zones_full[df_zones_full.zone_id == 0].index)
-    return df_zones_full
-
-def fill_properties(df_properties):
-    properties_cols_to_drop = ["id",
-                            "status",
-                            "status_changed_on",
-                            "contracted_on",
-                            "off_market_on",
-                            "list_price",
-                            "original_list_price",
-                            "previous_price",
-                            "derived_basement_square_feet",
-                            "car_storage",
-                            "car_spaces",
-                            "area",
-                            "street",
-                            "city",
-                            "state",
-                            "property_key",
-                            "externally_last_updated_at",
-                            "photos",
-                            "structural_style",
-                            "property_type",
-                            "architecture",
-                            "lot_size_acres",
-                            "basement_finished_status",
-                            "basement_finished_pct",
-                            "basement_size",
-                            "basement_type",
-                            "listing_agent_mls_id",
-                            "structural_type",
-                            "zoned",
-                            "listing_agent_mls_id",
-                            "structural_type"]
-
-    df_properties_full = fill_df(df_properties, properties_cols_to_drop)
-    return df_properties_full
+    properties = '../data/denver-properties-in-super-zones.csv'
+    return (pd.read_csv(properties, low_memory=False))
 
 def fill_df(df, cols_to_drop=[]):
     '''
@@ -74,7 +32,7 @@ def fill_df(df, cols_to_drop=[]):
     df_full = df.dropna()
     return df_full
 
-def col_data_types(df):
+def col_data_types(df, data_types={}):
     '''
     INPUT:
         - dataframe to be cleaned
@@ -84,29 +42,35 @@ def col_data_types(df):
 
     Returns a dataframe with consistent datatypes in each column
     '''
-    data_types = {'sold_on': 'datetime64[ns]',
-                    'listed_on': 'datetime64[ns]',
-                    'sold_price': 'int',
-                    'above_grade_square_feet': 'int',
-                    'garages': 'int',
-                    'beds': 'int',
-                    'baths': 'int',
-                    'subdivision': 'category',
-                    'zip': 'int',
-                    'year_built': 'int',
-                    'lot_size_square_feet': 'int',
-                    'basement_square_feet': 'int',
-                    'lat': 'float',
-                    'lng': 'float',
-                    'is_attached': 'int',
-                    'stories': 'int',
-                    'zone_id': 'int'}
 
     for col in df.columns:
         if data_types[col] != 'datetime64[ns]':
             df.loc[:,col] = df.loc[:,col].astype(data_types[col])
         else:
             df.loc[:,col] = pd.to_datetime(df.loc[:,col])
+    return df
+
+def clean_df(df, data_types={}):
+    '''
+    INPUT:
+        -
+
+    OUTPUT:
+        -
+
+    '''
+
+    cols_to_drop = []
+    for col in df.columns:
+        if data_types[col]:
+            if data_types[col] != 'datetime64[ns]':
+                df.loc[:,col] = df.loc[:,col].astype(data_types[col])
+            else:
+                df.loc[:,col] = pd.to_datetime(df.loc[:,col])
+        else:
+            cols_to_drop.append(col)
+    df.drop(cols_to_drop, axis=1, inplace=True)
+
     return df
 
 def eng_features(df):
@@ -131,24 +95,24 @@ def eng_features(df):
 
     Sets indecies to 0, 1, ..., n
     '''
-    df['time_on_market'] = df['sold_on'] - df['listed_on']
-    df.loc[:,'time_on_market'] = df.loc[:,'time_on_market'].dt.days
-    df.drop(['listed_on'], axis=1, inplace=True)
-
-    earliest_date = min(df['sold_on'])
-    df['sold_on'] = df['sold_on'] - earliest_date
-    df.loc[:,'sold_on'] = df.loc[:,'sold_on'].dt.days
-
-    df[['subdivision']] = df[['subdivision']].apply(lambda x: x.cat.codes)
-
-    df = df.groupby('zip').filter(lambda x: len(x) > 25)
-
-    single_zone = []
-    for z in df['zip'].unique():
-        if len(df[df['zip'] == z]['zone_id'].unique()) == 1:
-            single_zone.append(z)
-    df = df[~df.zip.isin(single_zone)]
-    df.reset_index(drop=True, inplace=True)
+    # df['time_on_market'] = df['sold_on'] - df['listed_on']
+    # df.loc[:,'time_on_market'] = df.loc[:,'time_on_market'].dt.days
+    # df.drop(['listed_on'], axis=1, inplace=True)
+    #
+    # earliest_date = min(df['sold_on'])
+    # df['sold_on'] = df['sold_on'] - earliest_date
+    # df.loc[:,'sold_on'] = df.loc[:,'sold_on'].dt.days
+    #
+    # df[['subdivision']] = df[['subdivision']].apply(lambda x: x.cat.codes)
+    #
+    # df = df.groupby('zip').filter(lambda x: len(x) > 25)
+    #
+    # single_zone = []
+    # for z in df['zip'].unique():
+    #     if len(df[df['zip'] == z]['zone_id'].unique()) == 1:
+    #         single_zone.append(z)
+    # df = df[~df.zip.isin(single_zone)]
+    # df.reset_index(drop=True, inplace=True)
 
     return df
 
@@ -184,20 +148,24 @@ def standerdize_cols(df, cols):
     return df
 
 def eda_main():
-    df_properties, df_zones = read_in()
+    df_properties = read_in()
     print 'CSVs read in...'
 
-    df_zones_full = fill_zones(df_zones)
-    df_properties_full = fill_properties(df_properties)
+    data_types = {'id': 'int',
+                  'zone_id': 'int',
+                  'super_zone_id': 'int',
+                  'zip': 'int',
+                  'year_built': 'int',
+                  'lat': 'float',
+                  'lng': 'float'}
+
+    df_clean_small = clean_df(df_properties, data_types)
     print 'nans removed...'
 
-    df_properties_zones_full = fill_df(df_properties_full.set_index('listing_number').join(df_zones_full.set_index('listing_number')))
-    print 'tables joined...'
-
-    df_properties_zones_full_clean = col_data_types(df_properties_zones_full)
+    # df_properties_zones_full_clean = col_data_types(df_properties_zones_full)
     print 'data types streamlined...'
 
-    df_clean = eng_features(df_properties_zones_full_clean)
+    df_clean = eng_features(df_clean_small)
     print 'extra features added...'
 
     # cols_std = ['sold_on', 'time_on_market', 'sold_price', 'above_grade_square_feet', 'lot_size_square_feet', 'basement_square_feet']

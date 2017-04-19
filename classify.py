@@ -154,25 +154,26 @@ def starters(df_clean):
 
     OUTPUT
         - dictionary where keys are unique zip codes from the input df
-        - manual list of columns that need atandardizing later on
+        - manual list of columns that need standardizing later on
 
     gets things started by defining zip codes to loop though and columns to standardize
     '''
 
-    cols_std = ['sold_on', 'time_on_market', 'sold_price', 'above_grade_square_feet', 'lot_size_square_feet', 'basement_square_feet']
-    my_zips = [20120]
+    cols_std = []
+    # my_zips = [80216, 80027]
     # my_zips = [22181, 21054, 20601, 21090, 22025, 20001, 20002, 20009, 20011, 20015]
-    # my_zips =list(df_clean['zip'].unique())
-    df_zip_codes = pd.read_csv('../data/zip_codes.csv')
-    df_clean_zips = pd.merge(df_clean, df_zip_codes, on='zip', how='left')
-    df_clean_zips['urban'] = (df_clean_zips['lzden'] > 8.).astype(int)
-    df_urban_only = df_clean_zips[df_clean_zips['urban'] == 1]
-    urban_zips = list(df_urban_only['zip'])
-    zip_codes = {key:(1 if key in urban_zips else 0) for key in my_zips}
+    my_zips = list(df_clean['zip'].unique()) # creates a list of all unique zip codes in the dataframe
+    df_agg_zips = df_clean.groupby('super_zone_id').agg(lambda x: x.value_counts().index[0]) # creates dataframe with super_zone_id as index, zip and only column
+    df_zip_codes = pd.read_csv('../data/zip_codes.csv') # pulls in zip code info for every zip in the US. column 'lzden' is population density
+    df_agg_zips_info = pd.merge(df_agg_zips, df_zip_codes, on='zip', how='left') #adds zip code info for each super zone to the agg dataframe.
+    super_zone_zip = dict(zip(df_agg_zips.index.values, df_agg_zips.zip)) # creates a dictionary with super zone as key, most common zip as value
+    df_agg_zips_info['urban'] = (df_agg_zips_info['lzden'] > 8.).astype(int) # creates new binary column 'urban' in the agg dataframe
+    zip_codes = df_agg_zips_info.set_index('zip').to_dict()['urban'] # creates dictionary with zip code as key, urban boolean as value
+    super_zone_dict = {super_zone: (super_zone_zip[super_zone], zip_codes[super_zone_zip[super_zone]]) for super_zone in super_zone_zip} # creates new (and final) dictionary with super zone id as key, (most common zip, urban boolean) tuple as value
 
-    return zip_codes, cols_std
+    return super_zone_dict, cols_std
 
-def classify_zip(df_zip, urban, cols_std, zip_key):
+def classify_sz(df_sz, urban, cols_std, sz_key):
     '''
     INPUT
         - dataframe with all rows pretaining to a single zip code
@@ -186,12 +187,12 @@ def classify_zip(df_zip, urban, cols_std, zip_key):
     classifies the houses within a given zip code into the same number of nests as there are given zones
     '''
 
-    df = standerdize_cols(df_zip, cols_std)
+    df = standerdize_cols(df_sz, cols_std)
     inds = df.index
-    n_clusters = len(df_zip['zone_id'].unique())
+    n_clusters = 20 # len(df_sz['zone_id'].unique()) # use the same number of clusters as privy pre-made zones
     X_full = df.values
 
-    ll_cols = [11, 12]
+    ll_cols = [1, 2]
     # cols_dict = {0: [5], 1: [14]}
     cols = ll_cols #+ cols_dict[urban]
     col_names = list(df.columns[cols])
@@ -207,16 +208,27 @@ def classify_zip(df_zip, urban, cols_std, zip_key):
     return df_nest
 
 if __name__ == '__main__':
-    df_clean = eda_main()
-    zip_codes, cols_std = starters(df_clean)
+    df_clean, df_clean_run = eda_main()
+    sz_dict, cols_std = starters(df_clean)
     df_scores = pd.DataFrame()
-    i=len(zip_codes)
-    for zip_key, urban in zip_codes.iteritems():
-        print "working on zip: {}. {} more to go".format(zip_key, i-1)
-        i-=1
-        df_zip = df_clean[df_clean['zip'] == zip_key]
-        df_nest = classify_zip(df_zip, urban, cols_std, zip_key)
-        df_scores = df_scores.append(df_nest[['nest_id', 'nest_score', 'zone_score']])
+    i=len(sz_dict)
 
-    df_clean_scores = df_clean.join(df_scores, how='left')
-    df_clean_scores.to_csv('../data/data/20120_crow.csv')
+    for sz_key, urban in sz_dict.iteritems():
+        print "working on super zone id {}. {} more to go".format(sz_key, i-1)
+        i-=1
+        df_sz = df_clean_run[df_clean_run['super_zone_id'] == sz_key]
+        df_sz_run = df_sz.drop(['super_zone_id'], 1)
+        df_nest = classify_sz(df_sz_run, urban[1], cols_std, sz_key)
+        df_scores = df_scores.append(df_nest[['nest_id', 'nest_score', 'zone_score']])
+        if (len(sz_dict) - i) == 3:
+            df_scores = df_scores.dropna()
+            df_clean_scores = df_clean_run.join(df_scores, how='left')
+            df_clean_scores.to_csv('../results/first_run_super_zones.csv')
+
+
+    # there are 35 super zones with fewer than 26 houses. this is the code to see them -> df_clean_run.groupby('super_zone_id').agg('count').sort_values('zone_id')['zone_id'][:35]
+
+
+
+    # df_clean_scores = df_clean.join(df_scores, how='left')
+    # df_clean_scores.to_csv('../results/first_run_super_zones.csv')

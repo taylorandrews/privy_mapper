@@ -3,6 +3,7 @@ import numpy as np
 import math
 from sklearn.preprocessing import MinMaxScaler
 from datetime import datetime
+from classify import crow_distance
 
 def read_in():
     '''
@@ -16,57 +17,30 @@ def read_in():
     properties = '../data/denver-properties-in-super-zones.csv'
     return (pd.read_csv(properties, low_memory=False))
 
-def fill_df(df, cols_to_drop=[]):
-    '''
-    INPUT:
-        - Sparse dataframe to be cleaned
-        - List of columns to drop
-
-    OUTPUT:
-        Dense dataframe
-
-    Cleans the original dataframe. Simply drops certain columns in cols_to_drop and removes rows with any nan values
-    '''
-
-    df.drop(cols_to_drop, axis=1, inplace=True)
-    df_full = df.dropna()
-    return df_full
-
-def col_data_types(df, data_types={}):
-    '''
-    INPUT:
-        - dataframe to be cleaned
-
-    OUTPUT:
-        - cleaned dataframe
-
-    Returns a dataframe with consistent datatypes in each column
-    '''
-
-    for col in df.columns:
-        if data_types[col] != 'datetime64[ns]':
-            df.loc[:,col] = df.loc[:,col].astype(data_types[col])
-        else:
-            df.loc[:,col] = pd.to_datetime(df.loc[:,col])
-    return df
-
 def clean_df(df, data_types={}):
     '''
     INPUT:
-        -
+        - dataframe to be cleaned
+        - dictionary of column names as keys and desired datatypes as corresponding values
 
     OUTPUT:
-        -
+        - dataframe
 
+    Cleans the dataframe.
+    Drops columns not listed in the given data_types dictionary.
+    Will break if there are NaNs.
+    Streamlines datatypes within each column.
     '''
 
     cols_to_drop = []
     for col in df.columns:
-        if data_types[col]:
-            if data_types[col] != 'datetime64[ns]':
-                df.loc[:,col] = df.loc[:,col].astype(data_types[col])
-            else:
+        if col in data_types:
+            if data_types[col] == 'datetime64[ns]':
                 df.loc[:,col] = pd.to_datetime(df.loc[:,col])
+            elif col == 'zip':
+                df.loc[:,col] = df.loc[:,col].apply(lambda x: int(x[:5]))
+            else:
+                df.loc[:,col] = df.loc[:,col].astype(data_types[col])
         else:
             cols_to_drop.append(col)
     df.drop(cols_to_drop, axis=1, inplace=True)
@@ -77,44 +51,34 @@ def eng_features(df):
     '''
     INPUT:
         - dataframe
-            must have columns listed_on and sold_on
 
     OUTPUT
         - dataframe
-            will have columns sold_on and time_on_market
 
-    Engineers a feature called time_on_market
+    Place in algorithm to engineer features
 
-    Changes the subdivision column to an integer
-
-    Changes 'sold_on' column to integer by subtracting the minimum date from each date
-
-    Drops houses with fewer than 25 comps in the same zip code
-
-    Drops houses in zip codes with < 2 zones
-
-    Sets indecies to 0, 1, ..., n
+    Also takes any super zones with fewer than 26 houses and lumps them in with the closest zone
     '''
-    # df['time_on_market'] = df['sold_on'] - df['listed_on']
-    # df.loc[:,'time_on_market'] = df.loc[:,'time_on_market'].dt.days
-    # df.drop(['listed_on'], axis=1, inplace=True)
-    #
-    # earliest_date = min(df['sold_on'])
-    # df['sold_on'] = df['sold_on'] - earliest_date
-    # df.loc[:,'sold_on'] = df.loc[:,'sold_on'].dt.days
-    #
-    # df[['subdivision']] = df[['subdivision']].apply(lambda x: x.cat.codes)
-    #
-    # df = df.groupby('zip').filter(lambda x: len(x) > 25)
-    #
-    # single_zone = []
-    # for z in df['zip'].unique():
-    #     if len(df[df['zip'] == z]['zone_id'].unique()) == 1:
-    #         single_zone.append(z)
-    # df = df[~df.zip.isin(single_zone)]
-    # df.reset_index(drop=True, inplace=True)
 
-    return df
+    df_inds = df.set_index('id')
+
+    df_run = df_inds.drop(['zip', 'year_built'], 1)
+
+    # for i_out, v_out in df_clean_run.groupby('super_zone_id').agg('count')['zone_id'][df_clean_run.groupby('super_zone_id').agg('count')['zone_id'] < 16].iteritems():
+    #     super_zone_center = (np.average(df_clean_run[df_clean_run['super_zone_id'] == i_out]['lat']), np.average(df_clean_run[df_clean_run['super_zone_id'] == i_out]['lng']))
+    #     for i_in, v_in in df_clean_run[df_clean_run['super_zone_id'] =! i].iteritems():
+
+    sz_df = df_clean_run.groupby('super_zone_id').agg({'zone_id':['count'], 'lat':['mean'], 'lng':['mean']})
+    sz_df.columns = sz_df.columns.get_level_values(0)
+
+    underpop_limit = 15
+    sz_df['true_zone'] = 0
+    for idx_underpop, row_underpop in sz_df[sz_df['zone_id'] < (underpop_limit + 1)].iteritems():
+        for idx_full, row_full in sz_df[sz_df['zone_id'] > underpop_limit].iteritems():
+        dist = crow_distance(row_underpop, row_full)
+
+
+    return (df_inds, df_run)
 
 def partition_df(df):
     '''
@@ -124,7 +88,7 @@ def partition_df(df):
     OUTPUT
         - dataframe that is a subset of input
 
-    This grabs a piece of the dataframe for faster testing of the entropy function
+    This grabs a piece of the dataframe for faster testing
     '''
     zips_to_keep = [22180, 22181, 22027, 22043, 22046, 22213, 22205, 22207]
     # zips_to_keep = [22180, 22181]
@@ -142,9 +106,9 @@ def standerdize_cols(df, cols):
 
     standardizes certain columns in dataframe from 0 to 1
     '''
-
-    scalar = MinMaxScaler()
-    df[cols] = scalar.fit_transform(df[cols])
+    if len(cols) > 0:
+        scalar = MinMaxScaler()
+        df[cols] = scalar.fit_transform(df[cols])
     return df
 
 def eda_main():
@@ -161,19 +125,17 @@ def eda_main():
 
     df_clean_small = clean_df(df_properties, data_types)
     print 'nans removed...'
-
-    # df_properties_zones_full_clean = col_data_types(df_properties_zones_full)
     print 'data types streamlined...'
 
-    df_clean = eng_features(df_clean_small)
+    df_clean, df_clean_run = eng_features(df_clean_small)
     print 'extra features added...'
-
-    # cols_std = ['sold_on', 'time_on_market', 'sold_price', 'above_grade_square_feet', 'lot_size_square_feet', 'basement_square_feet']
-    # df_clean_std = standerdize_cols(df_clean, cols_std)
-    # print 'relevant columns standardized...'
 
     # df_clean_test = partition_df(df_clean)
     # print 'dataframe partitioned...'
 
-    return (df_clean)
+    # return (df_clean, df_clean_run)
+    return (df_clean, df_clean_run)
     print 'done!'
+
+if __name__ == '__main__':
+    df_clean, df_clean_run = eda_main()

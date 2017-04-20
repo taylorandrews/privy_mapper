@@ -118,6 +118,7 @@ def build_fit_predict(X, n_clusters, urban):
     single = []
     min_dist = 1000
     [single.append(j) for j in [np.argwhere(i==y) for i in np.unique(y)] if len(j)==1]
+    #FUUUUCKCKCKCCCKCKKKKKK THIS LINE BITCH
     for (solo_pred, solo_ind) in [(y[i], i) for i in np.array(single).flatten()]:
         for cent in centriods:
             dist = my_distance(centriods[cent], X[solo_ind], urban)
@@ -163,7 +164,7 @@ def starters(df_clean):
     # my_zips = [80216, 80027]
     # my_zips = [22181, 21054, 20601, 21090, 22025, 20001, 20002, 20009, 20011, 20015]
     my_zips = list(df_clean['zip'].unique()) # creates a list of all unique zip codes in the dataframe
-    df_agg_zips = df_clean.groupby('super_zone_id').agg(lambda x: x.value_counts().index[0]) # creates dataframe with super_zone_id as index, zip and only column
+    df_agg_zips = df_clean.groupby('super_zone_id').agg(lambda x: x.value_counts().index[0]) # creates dataframe with super_zone_id as index, zip as only column
     df_zip_codes = pd.read_csv('../data/zip_codes.csv') # pulls in zip code info for every zip in the US. column 'lzden' is population density
     df_agg_zips_info = pd.merge(df_agg_zips, df_zip_codes, on='zip', how='left') #adds zip code info for each super zone to the agg dataframe.
     super_zone_zip = dict(zip(df_agg_zips.index.values, df_agg_zips.zip)) # creates a dictionary with super zone as key, most common zip as value
@@ -189,15 +190,18 @@ def classify_sz(df_sz, urban, cols_std, sz_key):
 
     df = standerdize_cols(df_sz, cols_std)
     inds = df.index
-    n_clusters = 20 # len(df_sz['zone_id'].unique()) # use the same number of clusters as privy pre-made zones
-    X_full = df.values
 
+    X_full = df.values
     ll_cols = [1, 2]
     # cols_dict = {0: [5], 1: [14]}
     cols = ll_cols #+ cols_dict[urban]
     col_names = list(df.columns[cols])
     X = X_full[:,cols]
-    y_pred = build_fit_predict(X, n_clusters, urban)
+    n_clusters = df.shape[0]/40+1
+    if n_clusters == 1:
+        y_pred = 0
+    else:
+        y_pred = build_fit_predict(X, n_clusters, urban)
     y_privy = list(df['zone_id'])
     df_nest = numpy_to_pandas(X, y_pred, col_names, 'nest_id', inds)
     df_nest['zone_id'] = y_privy
@@ -220,10 +224,9 @@ if __name__ == '__main__':
         df_sz_run = df_sz.drop(['super_zone_id'], 1)
         df_nest = classify_sz(df_sz_run, urban[1], cols_std, sz_key)
         df_scores = df_scores.append(df_nest[['nest_id', 'nest_score', 'zone_score']])
-        if (len(sz_dict) - i) == 3:
-            df_scores = df_scores.dropna()
-            df_clean_scores = df_clean_run.join(df_scores, how='left')
-            df_clean_scores.to_csv('../results/first_run_super_zones.csv')
+    df_scores = df_scores.dropna()
+    df_clean_scores = df_clean_run.join(df_scores, how='left')
+    df_clean_scores.to_csv('../results/first_run_super_zones.csv')
 
 
     # there are 35 super zones with fewer than 26 houses. this is the code to see them -> df_clean_run.groupby('super_zone_id').agg('count').sort_values('zone_id')['zone_id'][:35]

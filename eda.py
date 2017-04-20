@@ -3,7 +3,8 @@ import numpy as np
 import math
 from sklearn.preprocessing import MinMaxScaler
 from datetime import datetime
-from classify import crow_distance
+from math import sin, cos, sqrt, atan2, radians
+
 
 def read_in():
     '''
@@ -16,6 +17,38 @@ def read_in():
 
     properties = '../data/denver-properties-in-super-zones.csv'
     return (pd.read_csv(properties, low_memory=False))
+
+def crow_distance(h1, h2):
+    '''
+    INPUT
+        - row from pandas dataframe representing one house
+        - row from pandas dataframe representing another house
+
+    OUTPUT
+        - distance between the houses over the earths surface as the crow flies
+
+    returns how far apart two houses are based on physical distance
+    measured in kilometers
+    '''
+    h1_lat, h1_lng, h2_lat, h2_lng = float(h1[0]), float(h1[1]), float(h2[0]), float(h2[1])
+
+    # approximate radius of earth in km
+    R = 6373.0
+
+    lat1 = radians(h1_lat)
+    lon1 = radians(h1_lng)
+    lat2 = radians(h2_lat)
+    lon2 = radians(h2_lng)
+
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+
+    a = sin(dlat / 2)**2 + cos(lat1) * cos(lat2) * sin(dlon / 2)**2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+    cd = R * c
+
+    return cd
 
 def clean_df(df, data_types={}):
     '''
@@ -68,16 +101,20 @@ def eng_features(df):
     #     super_zone_center = (np.average(df_clean_run[df_clean_run['super_zone_id'] == i_out]['lat']), np.average(df_clean_run[df_clean_run['super_zone_id'] == i_out]['lng']))
     #     for i_in, v_in in df_clean_run[df_clean_run['super_zone_id'] =! i].iteritems():
 
-    sz_df = df_clean_run.groupby('super_zone_id').agg({'zone_id':['count'], 'lat':['mean'], 'lng':['mean']})
+    sz_df = df_run.groupby('super_zone_id').agg({'zone_id':['count'], 'lat':['mean'], 'lng':['mean']})
     sz_df.columns = sz_df.columns.get_level_values(0)
 
-    underpop_limit = 15
-    sz_df['true_zone'] = 0
-    for idx_underpop, row_underpop in sz_df[sz_df['zone_id'] < (underpop_limit + 1)].iteritems():
-        for idx_full, row_full in sz_df[sz_df['zone_id'] > underpop_limit].iteritems():
-        dist = crow_distance(row_underpop, row_full)
-
-
+    house_limit = 15
+    min_dist = 1000
+    # sz_df['true_zone'] = 0
+    for idx_underpop, row_underpop in sz_df[sz_df['zone_id'] < (house_limit + 1)].iterrows():
+        for idx_full, row_full in sz_df[sz_df['zone_id'] != idx_underpop].iterrows():
+            dist = crow_distance(row_underpop, row_full)
+            if dist < min_dist:
+                min_dist = dist
+                nearest_super_zone = idx_full
+        # go back through the main df houses in an underpopulated super zone and change their zone to the nearest super zone
+        df_run.loc[df_run['super_zone_id'] == idx_underpop, 'super_zone_id'] = nearest_super_zone
     return (df_inds, df_run)
 
 def partition_df(df):
@@ -134,8 +171,8 @@ def eda_main():
     # print 'dataframe partitioned...'
 
     # return (df_clean, df_clean_run)
-    return (df_clean, df_clean_run)
+    return (df_clean.loc[df_clean['super_zone_id'].isin([5, 9, 11, 13])], df_clean_run.loc[df_clean_run['super_zone_id'].isin([5, 9, 11, 13])])
     print 'done!'
 
-if __name__ == '__main__':
-    df_clean, df_clean_run = eda_main()
+# if __name__ == '__main__':
+#     df_clean, df_clean_run = eda_main()

@@ -93,20 +93,13 @@ def eng_features(df):
     Also takes any super zones with fewer than 26 houses and lumps them in with the closest zone
     '''
 
-    df_inds = df.set_index('id')
-
-    df_run = df_inds.drop(['zip', 'year_built'], 1)
-
-    # for i_out, v_out in df_clean_run.groupby('super_zone_id').agg('count')['zone_id'][df_clean_run.groupby('super_zone_id').agg('count')['zone_id'] < 16].iteritems():
-    #     super_zone_center = (np.average(df_clean_run[df_clean_run['super_zone_id'] == i_out]['lat']), np.average(df_clean_run[df_clean_run['super_zone_id'] == i_out]['lng']))
-    #     for i_in, v_in in df_clean_run[df_clean_run['super_zone_id'] =! i].iteritems():
+    df_run = df.set_index('id')
 
     sz_df = df_run.groupby('super_zone_id').agg({'zone_id':['count'], 'lat':['mean'], 'lng':['mean']})
     sz_df.columns = sz_df.columns.get_level_values(0)
 
     house_limit = 15
     min_dist = 1000
-    # sz_df['true_zone'] = 0
     for idx_underpop, row_underpop in sz_df[sz_df['zone_id'] < (house_limit + 1)].iterrows():
         for idx_full, row_full in sz_df[sz_df['zone_id'] != idx_underpop].iterrows():
             dist = crow_distance(row_underpop, row_full)
@@ -115,7 +108,7 @@ def eng_features(df):
                 nearest_super_zone = idx_full
         # go back through the main df houses in an underpopulated super zone and change their zone to the nearest super zone
         df_run.loc[df_run['super_zone_id'] == idx_underpop, 'super_zone_id'] = nearest_super_zone
-    return (df_inds, df_run)
+    return (df_run)
 
 def partition_df(df):
     '''
@@ -164,14 +157,14 @@ def eda_main():
     print 'nans removed...'
     print 'data types streamlined...'
 
-    df_clean, df_clean_run = eng_features(df_clean_small)
+    df_clean = eng_features(df_clean_small)
     print 'extra features added...'
 
     # df_clean_test = partition_df(df_clean)
     # print 'dataframe partitioned...'
 
-    # return (df_clean, df_clean_run)
-    return (df_clean.loc[df_clean['super_zone_id'].isin([5, 9, 11, 13])], df_clean_run.loc[df_clean_run['super_zone_id'].isin([5, 9, 11, 13])])
+    # return (df_clean)
+    return (df_clean.loc[df_clean['super_zone_id'].isin([9, 52])])
     print 'done!'
 
 # if __name__ == '__main__':

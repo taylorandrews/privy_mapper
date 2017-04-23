@@ -164,8 +164,8 @@ def eda_main():
     # print 'dataframe partitioned...'
 
     # return (df_clean)
-    return (df_clean.loc[df_clean['super_zone_id'].isin([9, 52])])
+    return (df_clean.loc[df_clean['super_zone_id'].isin([5, 19, 52])])
     print 'done!'
 
 # if __name__ == '__main__':
-#     df_clean, df_clean_run = eda_main()
+#     df_clean = eda_main()

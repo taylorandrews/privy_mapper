@@ -118,7 +118,6 @@ def build_fit_predict(X, n_clusters, urban):
     single = []
     min_dist = 1000
     [single.append(j) for j in [np.argwhere(i==y) for i in np.unique(y)] if len(j)==1]
-    #FUUUUCKCKCKCCCKCKKKKKK THIS LINE
     for (solo_pred, solo_ind) in [(y[i], i) for i in np.array(single).flatten()]:
         for cent in centriods:
             dist = my_distance(centriods[cent], X[solo_ind], urban)
@@ -161,9 +160,6 @@ def starters(df_clean):
     '''
 
     cols_std = []
-    # my_zips = [80216, 80027]
-    # my_zips = [22181, 21054, 20601, 21090, 22025, 20001, 20002, 20009, 20011, 20015]
-    # my_zips = list(df_clean['zip'].unique()) # creates a list of all unique zip codes in the dataframe
     df_agg_zips = df_clean.groupby('super_zone_id').agg(lambda x: x.value_counts().index[0]) # creates dataframe with super_zone_id as index, zip as only column
     df_zip_codes = pd.read_csv('../data/zip_codes.csv') # pulls in zip code info for every zip in the US. column 'lzden' is population density
     df_agg_zips_info = pd.merge(df_agg_zips, df_zip_codes, on='zip', how='left') #adds zip code info for each super zone to the agg dataframe.
@@ -199,22 +195,22 @@ def classify_sz(df_sz, urban, cols_std, sz_key):
     X = X_full[:,cols]
     n_clusters = df.shape[0]/40+1
     y_privy = list(df['zone_id'])
-    if n_clusters == 1:
+    if n_clusters == 1: # this is for super zones with fewer than 40 houses. it doesn't even mess with any of the clustering code, it just throws them into the same group and calls is good
         y_pred = np.zeros(df.shape[0])
         df_nest = numpy_to_pandas(X, y_pred, col_names, 'nest_id', inds)
         df_nest['zone_id'] = y_privy
         df_nest['nest_score'] = np.zeros(df.shape[0])
+        df_nest['zone_score'] = 0
     else:
         y_pred = build_fit_predict(X, n_clusters, urban)
         df_nest = numpy_to_pandas(X, y_pred, col_names, 'nest_id', inds)
         df_nest['zone_id'] = y_privy
         kwds = {'urban': urban}
         df_nest['nest_score'] = silhouette_samples(X=X, labels=y_pred, metric=my_distance, **kwds)
-    # if df_clean[df_clean['super_zone_id']==19]['zone_id'].unique().size == 1:
-    #     df_nest['zone_score'] = 0
-    # else:
-    #     df_nest['zone_score'] = silhouette_samples(X=X, labels=y_privy, metric=my_distance, **kwds)
-    # ^ wtf is that code?? check against BU file
+        if len(set(y_privy)) == 1:
+            df_nest['zone_score'] = 0
+        else:
+            df_nest['zone_score'] = silhouette_samples(X=X, labels=y_privy, metric=my_distance, **kwds)
     return df_nest
 
 if __name__ == '__main__':
@@ -232,12 +228,14 @@ if __name__ == '__main__':
         df_scores = df_scores.append(df_nest[['nest_id', 'nest_score', 'zone_score']])
     df_scores = df_scores.dropna()
     df_clean_scores = df_clean.join(df_scores, how='left')
-    df_clean_scores.to_csv('../results/super_zones_all_data.csv')
+    # df_clean_scores['cluster_id'] =
+
+    # trying to get a nice cluster_id column with super zone id then a 0 then the nest id. concatinate strings of ints ... check nest_id being a float first tho
+
+
+    df_clean_scores.to_csv('../results/testing.csv')
+    df_clean_scores_simple = df_clean_scores.drop(['zone_id', 'super_zone_id', 'zip', 'year_built', 'nest_score', 'zone_score'])
+    df_clean_scores_simple.to_csv('../results/testing_simple.csv')
 
 
     # there are 35 super zones with fewer than 26 houses. this is the code to see them -> df_clean_run.groupby('super_zone_id').agg('count').sort_values('zone_id')['zone_id'][:35]
-
-
-
-    # df_clean_scores = df_clean.join(df_scores, how='left')
-    # df_clean_scores.to_csv('../results/first_run_super_zones.csv')

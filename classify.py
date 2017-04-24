@@ -144,7 +144,7 @@ def numpy_to_pandas(X, y, X_cols, y_col, inds):
     labeled_data = np.vstack((X.T, y)).T
     X_cols.append(y_col)
     df = pd.DataFrame(data=labeled_data, columns=X_cols, index=inds)
-
+    df.loc[:,y_col] = df.loc[:,y_col].astype(int)
     return df
 
 def starters(df_clean):
@@ -199,7 +199,7 @@ def classify_sz(df_sz, urban, cols_std, sz_key):
         y_pred = np.zeros(df.shape[0])
         df_nest = numpy_to_pandas(X, y_pred, col_names, 'nest_id', inds)
         df_nest['zone_id'] = y_privy
-        df_nest['nest_score'] = np.zeros(df.shape[0])
+        df_nest['nest_score'] = np.zeros(df.shape[0], dtype=int)
         df_nest['zone_score'] = 0
     else:
         y_pred = build_fit_predict(X, n_clusters, urban)
@@ -213,12 +213,35 @@ def classify_sz(df_sz, urban, cols_std, sz_key):
             df_nest['zone_score'] = silhouette_samples(X=X, labels=y_privy, metric=my_distance, **kwds)
     return df_nest
 
+def final_wash_save(df_scores, df_clean):
+    '''
+    INPUT
+        - dataframe with my nests, their scores and privys zone scores
+        - main df with all the house info
+
+    OUTPUT
+        - clean, full dataframe with all the house info, nest/zone/super zone id's and the scores
+        - df with just house id's and thier nest id's
+
+    This is the last function that puts the final touches on the df's and saves them to csv's to be used! yay
+    '''
+    df_scores = df_scores.dropna()
+    df_clean_scores = df_clean.join(df_scores, how='left')
+    df_clean_scores['cluster_id'] = (df_clean_scores['super_zone_id'].astype(str) + '-' + df_clean_scores['nest_id'].astype(str))
+    df_clean_scores['cluster_id_int'] = df_clean_scores['cluster_id'].astype('category')
+    df_clean_scores['cluster_id_int'] = df_clean_scores['cluster_id_int'].cat.codes
+    df_simple = df_clean_scores[['cluster_id_int']]
+
+    df_clean_scores.to_csv('../results/testing.csv')
+    df_simple.to_csv('../results/testing_simple.csv')
+    return df_clean_scores, df_simple
+
+
 if __name__ == '__main__':
     df_clean = eda_main()
     sz_dict, cols_std = starters(df_clean)
     df_scores = pd.DataFrame()
     i=len(sz_dict)
-
     for sz_key, urban in sz_dict.iteritems():
         print "working on super zone id {}. {} more to go.".format(sz_key, i-1)
         i-=1
@@ -226,16 +249,4 @@ if __name__ == '__main__':
         df_sz_run = df_sz.drop(['super_zone_id', 'zip', 'year_built'], 1)
         df_nest = classify_sz(df_sz_run, urban[1], cols_std, sz_key)
         df_scores = df_scores.append(df_nest[['nest_id', 'nest_score', 'zone_score']])
-    df_scores = df_scores.dropna()
-    df_clean_scores = df_clean.join(df_scores, how='left')
-    # df_clean_scores['cluster_id'] =
-
-    # trying to get a nice cluster_id column with super zone id then a 0 then the nest id. concatinate strings of ints ... check nest_id being a float first tho
-
-
-    df_clean_scores.to_csv('../results/testing.csv')
-    df_clean_scores_simple = df_clean_scores.drop(['zone_id', 'super_zone_id', 'zip', 'year_built', 'nest_score', 'zone_score'])
-    df_clean_scores_simple.to_csv('../results/testing_simple.csv')
-
-
-    # there are 35 super zones with fewer than 26 houses. this is the code to see them -> df_clean_run.groupby('super_zone_id').agg('count').sort_values('zone_id')['zone_id'][:35]
+    df_clean_scores, df_simple = final_wash_save(df_scores, df_clean)

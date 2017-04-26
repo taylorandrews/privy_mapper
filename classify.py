@@ -5,6 +5,7 @@ from sklearn.neighbors import kneighbors_graph
 from sklearn.cluster import AgglomerativeClustering
 from math import sin, cos, sqrt, atan2, radians
 from sklearn.metrics import silhouette_score, silhouette_samples
+from collections import Counter
 
 def crow_distance(h1, h2):
     '''
@@ -100,9 +101,8 @@ def build_fit_predict(X, n_clusters, urban):
     fits the model and clusters the data into n_clusters groups
     '''
 
-    connectivity_matrix = build_connectivity_matrix(X, urban) #urban difference
+    connectivity_matrix = build_connectivity_matrix(X, urban)
 
-    # this one is for testing
     ac = AgglomerativeClustering(n_clusters=n_clusters,
                                 connectivity=connectivity_matrix,
                                 affinity='euclidean',
@@ -111,18 +111,37 @@ def build_fit_predict(X, n_clusters, urban):
 
     y = ac.fit_predict(X)
 
-    centriods = {}
+    # sets up a dictionary to store key=cluster id: value=numpy array -> [avg lat, avg lng]
+    centroids = {}
     for cluster_id in np.unique(y):
-        centriods[cluster_id] = X[np.array([y[i] == cluster_id for i in range(len(y))]).T].mean(0)
+        centroids[cluster_id] = X[np.array([y[i] == cluster_id for i in range(len(y))]).T].mean(0)
+    cluster_sizes = Counter(y)
+    # all_centroids = centroids
 
-    single = []
+    reassign = []
     min_dist = 1000
-    [single.append(j) for j in [np.argwhere(i==y) for i in np.unique(y)] if len(j)==1]
-    for (solo_pred, solo_ind) in [(y[i], i) for i in np.array(single).flatten()]:
-        for cent in centriods:
-            dist = my_distance(centriods[cent], X[solo_ind], urban)
+    min_cluster_size = 15
+    [reassign.append(j) for j in [np.argwhere(i==y) for i in np.unique(y)] if len(j)<min_cluster_size] # builds a list for the current super zone of the house ids that are in a cluster by themselves
+
+    #rebuild reassign so you don't ahve to flatten it later ...
+
+    # print all_centroids
+    # print centroids
+    #
+    # for cluster_id in all_centroids:
+    #     if np.count_nonzero(y == cluster_id) < min_cluster_size:
+    #         del centroids[cluster_id]
+
+    # print all_centroids
+    # print centroids
+    print reassign
+    for (solo_pred, solo_idx) in [(y[i], i) for i in np.array(reassign).flatten()]:
+        for cent in [k for (k, v) in cluster_sizes.items() if v > (min_cluster_size - 1)]:
+            print solo_idx
+            dist = my_distance(centroids[cent], X[solo_idx], urban)
             if dist < min_dist:
-                y[solo_ind] = cent
+                min_dist = dist
+                y[solo_idx] = cent
     return y
 
 def numpy_to_pandas(X, y, X_cols, y_col, inds):
@@ -195,7 +214,7 @@ def classify_sz(df_sz, urban, cols_std, sz_key):
     X = X_full[:,cols]
     n_clusters = df.shape[0]/40+1
     y_privy = list(df['zone_id'])
-    if n_clusters == 1: # this is for super zones with fewer than 40 houses. it doesn't even mess with any of the clustering code, it just throws them into the same group and calls is good
+    if n_clusters == 1: # this is for super zones with fewer than 40 houses. it doesn't even mess with any of the clustering code, it just throws them into the same group and calls it good
         y_pred = np.zeros(df.shape[0])
         df_nest = numpy_to_pandas(X, y_pred, col_names, 'nest_id', inds)
         df_nest['zone_id'] = y_privy
@@ -225,6 +244,7 @@ def final_wash_save(df_scores, df_clean):
 
     This is the last function that puts the final touches on the df's and saves them to csv's to be used! yay
     '''
+
     df_scores = df_scores.dropna()
     df_clean_scores = df_clean.join(df_scores, how='left')
     df_clean_scores['cluster_id'] = (df_clean_scores['super_zone_id'].astype(str) + '-' + df_clean_scores['nest_id'].astype(str))
@@ -235,7 +255,6 @@ def final_wash_save(df_scores, df_clean):
     df_clean_scores.to_csv('../results/testing.csv')
     df_simple.to_csv('../results/testing_simple.csv')
     return df_clean_scores, df_simple
-
 
 if __name__ == '__main__':
     df_clean = eda_main()

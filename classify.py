@@ -111,37 +111,26 @@ def build_fit_predict(X, n_clusters, urban):
 
     y = ac.fit_predict(X)
 
+    # print y
+    # print X
     # sets up a dictionary to store key=cluster id: value=numpy array -> [avg lat, avg lng]
     centroids = {}
     for cluster_id in np.unique(y):
         centroids[cluster_id] = X[np.array([y[i] == cluster_id for i in range(len(y))]).T].mean(0)
     cluster_sizes = Counter(y)
-    # all_centroids = centroids
+
 
     reassign = []
     min_dist = 1000
     min_cluster_size = 15
     [reassign.append(j) for j in [np.argwhere(i==y) for i in np.unique(y)] if len(j)<min_cluster_size] # builds a list for the current super zone of the house ids that are in a cluster by themselves
-
-    #rebuild reassign so you don't ahve to flatten it later ...
-
-    # print all_centroids
-    # print centroids
-    #
-    # for cluster_id in all_centroids:
-    #     if np.count_nonzero(y == cluster_id) < min_cluster_size:
-    #         del centroids[cluster_id]
-
-    # print all_centroids
-    # print centroids
-    print reassign
-    for (solo_pred, solo_idx) in [(y[i], i) for i in np.array(reassign).flatten()]:
-        for cent in [k for (k, v) in cluster_sizes.items() if v > (min_cluster_size - 1)]:
-            print solo_idx
-            dist = my_distance(centroids[cent], X[solo_idx], urban)
-            if dist < min_dist:
-                min_dist = dist
-                y[solo_idx] = cent
+    if len(reassign) != 0:
+        for (solo_pred, solo_idx) in [(y[i], i) for i in np.concatenate(reassign).ravel()]:
+            for cent in [k for (k, v) in cluster_sizes.items() if v > (min_cluster_size - 1)]:
+                dist = my_distance(centroids[cent], X[solo_idx], urban)
+                if dist < min_dist:
+                    min_dist = dist
+                    y[solo_idx] = cent
     return y
 
 def numpy_to_pandas(X, y, X_cols, y_col, inds):
@@ -212,7 +201,7 @@ def classify_sz(df_sz, urban, cols_std, sz_key):
     cols = ll_cols #+ cols_dict[urban]
     col_names = list(df.columns[cols])
     X = X_full[:,cols]
-    n_clusters = df.shape[0]/40+1
+    n_clusters = df.shape[0]/60+1
     y_privy = list(df['zone_id'])
     if n_clusters == 1: # this is for super zones with fewer than 40 houses. it doesn't even mess with any of the clustering code, it just throws them into the same group and calls it good
         y_pred = np.zeros(df.shape[0])
@@ -225,7 +214,10 @@ def classify_sz(df_sz, urban, cols_std, sz_key):
         df_nest = numpy_to_pandas(X, y_pred, col_names, 'nest_id', inds)
         df_nest['zone_id'] = y_privy
         kwds = {'urban': urban}
-        df_nest['nest_score'] = silhouette_samples(X=X, labels=y_pred, metric=my_distance, **kwds)
+        if len(set(y_pred)) == 1:
+            df_nest['nest_score'] = 0
+        else:
+            df_nest['nest_score'] = silhouette_samples(X=X, labels=y_pred, metric=my_distance, **kwds)
         if len(set(y_privy)) == 1:
             df_nest['zone_score'] = 0
         else:
@@ -252,8 +244,8 @@ def final_wash_save(df_scores, df_clean):
     df_clean_scores['cluster_id_int'] = df_clean_scores['cluster_id_int'].cat.codes
     df_simple = df_clean_scores[['cluster_id_int']]
 
-    df_clean_scores.to_csv('../results/testing.csv')
-    df_simple.to_csv('../results/testing_simple.csv')
+    df_clean_scores.to_csv('../results/denver_zones_60.csv')
+    df_simple.to_csv('../results/denver_zones_simple_60.csv')
     return df_clean_scores, df_simple
 
 if __name__ == '__main__':

@@ -3,10 +3,11 @@
 I worked with Denver based company [Privy](http://www.getprivynow.com) on this project. They introduced me to their business model and need for a clustering algorithm.
 The goal of this project is to algorithmically group houses into 'nests' of relevant comps. By taking the purely geographically based zones that Privy already made, and finding the patterns that they used, my algorithm can categorize new data. It's even capable of getting data from a totally new city, with different streets and features and create house nests from scratch.
 
+Check out my web application at [www.reveal-estate.com](www.reveal-estate.com) to learn more!
+
 <img alt="Example of Distnace Metric" src="images/all_zips.png" width='400'>  
 <sub><b>Figure 1: </b> Visualization of all houses in dataset. Colored by ZIP Code. </sub>   
 
-Check out my web application at [www.reveal-estate.com](www.reveal-estate.com) to learn more!
 
 ## Table of Contents
 1. [Dataset](#dataset)

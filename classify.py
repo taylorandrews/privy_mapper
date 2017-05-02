@@ -201,7 +201,10 @@ def classify_sz(df_sz, urban, cols_std, sz_key):
     cols = ll_cols #+ cols_dict[urban]
     col_names = list(df.columns[cols])
     X = X_full[:,cols]
-    n_clusters = df.shape[0]/80+1
+    if urban == 1:
+        n_clusters = df.shape[0]/200+1
+    else:
+        n_clusters = df.shape[0]/60+1
     y_privy = list(df['zone_id'])
     if n_clusters == 1: # this is for super zones with fewer than 40 houses. it doesn't even mess with any of the clustering code, it just throws them into the same group and calls it good
         y_pred = np.zeros(df.shape[0])

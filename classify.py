@@ -172,7 +172,7 @@ def starters(df_clean):
     df_zip_codes = pd.read_csv('../data/zip_codes.csv') # pulls in zip code info for every zip in the US. column 'lzden' is population density
     df_agg_zips_info = pd.merge(df_agg_zips, df_zip_codes, on='zip', how='left') #adds zip code info for each super zone to the agg dataframe.
     super_zone_zip = dict(zip(df_agg_zips.index.values, df_agg_zips.zip)) # creates a dictionary with super zone as key, most common zip as value
-    df_agg_zips_info['urban'] = (df_agg_zips_info['lzden'] > 8.).astype(int) # creates new binary column 'urban' in the agg dataframe
+    df_agg_zips_info['urban'] = (df_agg_zips_info['lzden'] > 7.85).astype(int) # creates new binary column 'urban' in the agg dataframe
     zip_codes = df_agg_zips_info.set_index('zip').to_dict()['urban'] # creates dictionary with zip code as key, urban boolean as value
     super_zone_dict = {super_zone: (super_zone_zip[super_zone], zip_codes[super_zone_zip[super_zone]]) for super_zone in super_zone_zip} # creates new (and final) dictionary with super zone id as key, (most common zip, urban boolean) tuple as value
 
@@ -202,9 +202,9 @@ def classify_sz(df_sz, urban, cols_std, sz_key):
     col_names = list(df.columns[cols])
     X = X_full[:,cols]
     if urban == 1:
-        n_clusters = df.shape[0]/200+1
+        n_clusters = df.shape[0]/600+1
     else:
-        n_clusters = df.shape[0]/60+1
+        n_clusters = df.shape[0]/400+1
     y_privy = list(df['zone_id'])
     if n_clusters == 1: # this is for super zones with fewer than 40 houses. it doesn't even mess with any of the clustering code, it just throws them into the same group and calls it good
         y_pred = np.zeros(df.shape[0])
@@ -247,8 +247,8 @@ def final_wash_save(df_scores, df_clean):
     df_clean_scores['cluster_id_int'] = df_clean_scores['cluster_id_int'].cat.codes
     df_simple = df_clean_scores[['cluster_id_int']]
 
-    df_clean_scores.to_csv('../results/denver_zones_20_60.csv')
-    df_simple.to_csv('../results/denver_zones_simple_20_60.csv')
+    df_clean_scores.to_csv('../results/denver_zones_400_600.csv')
+    df_simple.to_csv('../results/denver_zones_simple_400_600.csv')
     return df_clean_scores, df_simple
 
 if __name__ == '__main__':
